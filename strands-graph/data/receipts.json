@@ -1,0 +1,10 @@
+[
+  {"id": "RCPT-501", "date": "2026-08-15", "merchant": "Figma", "amount": 15.00, "file": "receipts/2026-08-15-figma.pdf"},
+  {"id": "RCPT-502", "date": "2026-08-18", "merchant": "Adobe", "amount": 59.99, "file": "receipts/2026-08-18-adobe.pdf"},
+  {"id": "RCPT-503", "date": "2026-09-01", "merchant": "Foundry Coworking", "amount": 450.00, "file": "receipts/2026-09-01-foundry.pdf"},
+  {"id": "RCPT-504", "date": "2026-08-27", "merchant": "The Copper Spoon", "amount": 68.40, "file": "receipts/2026-08-27-copper-spoon.jpg", "note": "Lunch with Marcus Reyes (Bluefin Media), scope for Q4 retainer"},
+  {"id": "RCPT-505", "date": "2026-09-04", "merchant": "Shell", "amount": 52.30, "file": "receipts/2026-09-04-shell.jpg"},
+  {"id": "RCPT-506", "date": "2026-09-01", "merchant": "Hiscox", "amount": 138.00, "file": "receipts/2026-09-01-hiscox.pdf"},
+  {"id": "RCPT-507", "date": "2026-08-20", "merchant": "Notion Labs", "amount": 29.00, "file": "receipts/2026-08-20-notion.pdf"},
+  {"id": "RCPT-508", "date": "2026-09-03", "merchant": "Cloudflare", "amount": 95.00, "file": "receipts/2026-09-03-cloudflare.pdf"}
+]

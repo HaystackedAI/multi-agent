@@ -1,0 +1,240 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Chaser web UI on AWS App Runner, pointed at the Chaser AgentCore Runtime.
+  The container image is built from the public GitHub repo by CodeBuild (no local Docker needed)
+  and stored in ECR. Deploy twice: CreateService=false (repo + build project), run the build,
+  then CreateService=true. scripts/deploy_web.sh does exactly that.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: chaser
+    AllowedPattern: "[a-z][a-z0-9-]{1,30}"
+  GitRepoUrl:
+    Type: String
+    Default: https://github.com/ritwikareddykancharla/chaser.git
+  GitRef:
+    Type: String
+    Default: main
+  AgentRuntimeArn:
+    Type: String
+    Description: ARN of the deployed AgentCore Runtime the web UI should invoke.
+    AllowedPattern: "arn:aws:bedrock-agentcore:[a-z0-9-]+:[0-9]{12}:runtime/.+"
+  CreateService:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: Create the App Runner service (requires the image to exist in ECR).
+  ImageTag:
+    Type: String
+    Default: latest
+  StartCommand:
+    Type: String
+    Default: uvicorn app.server:app --host 0.0.0.0 --port 8080
+
+Conditions:
+  CreateServiceCond: !Equals [!Ref CreateService, "true"]
+
+Resources:
+  # ---------------------------------------------------------------- image build
+  Repository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub "${ProjectName}-web"
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      EmptyOnDelete: true
+      LifecyclePolicy:
+        LifecyclePolicyText: >-
+          {"rules":[{"rulePriority":1,"description":"keep the last 5 images",
+          "selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":5},
+          "action":{"type":"expire"}}]}
+
+  BuildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/codebuild/${ProjectName}-web-build"
+      RetentionInDays: 14
+
+  BuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: build
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt BuildLogGroup.Arn
+              - Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:BatchGetImage
+                  - ecr:CompleteLayerUpload
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:InitiateLayerUpload
+                  - ecr:PutImage
+                  - ecr:UploadLayerPart
+                Resource: !GetAtt Repository.Arn
+
+  BuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${ProjectName}-web-build"
+      Description: !Sub "Builds the ${ProjectName} web image from GitHub and pushes it to ECR."
+      ServiceRole: !GetAtt BuildRole.Arn
+      TimeoutInMinutes: 30
+      Artifacts:
+        Type: NO_ARTIFACTS
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName: !Ref BuildLogGroup
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux-x86_64-standard:5.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: REPO_URL
+            Value: !Ref GitRepoUrl
+          - Name: GIT_REF
+            Value: !Ref GitRef
+          - Name: IMAGE_URI
+            Value: !Sub "${Repository.RepositoryUri}:${ImageTag}"
+          - Name: REGISTRY
+            Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com"
+      Source:
+        Type: NO_SOURCE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+                - git clone --depth 1 --branch "$GIT_REF" "$REPO_URL" checkout
+            build:
+              commands:
+                - docker build --tag "$IMAGE_URI" checkout
+            post_build:
+              commands:
+                - docker push "$IMAGE_URI"
+
+  # ---------------------------------------------------------------- web service
+  # The two roles are created unconditionally in the first stack pass so they have existed for
+  # minutes before the service is added. Creating them in the same update as the service made
+  # App Runner intermittently fail with "Failed to deploy your application image" (IAM propagation).
+  EcrAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: build.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: tasks.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: invoke-agentcore-runtime
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: bedrock-agentcore:InvokeAgentRuntime
+                Resource:
+                  - !Ref AgentRuntimeArn
+                  - !Sub "${AgentRuntimeArn}/runtime-endpoint/*"
+
+  AutoScaling:
+    Type: AWS::AppRunner::AutoScalingConfiguration
+    Condition: CreateServiceCond
+    Properties:
+      AutoScalingConfigurationName: !Sub "${ProjectName}-web"
+      # One instance: the UI serialises sweeps and shares a single runtime session.
+      MinSize: 1
+      MaxSize: 1
+      MaxConcurrency: 100
+
+  Service:
+    Type: AWS::AppRunner::Service
+    Condition: CreateServiceCond
+    DependsOn: [EcrAccessRole, InstanceRole]
+    Properties:
+      ServiceName: !Sub "${ProjectName}-web"
+      AutoScalingConfigurationArn: !GetAtt AutoScaling.AutoScalingConfigurationArn
+      HealthCheckConfiguration:
+        Protocol: HTTP
+        Path: /api/health
+        Interval: 10
+        Timeout: 5
+        HealthyThreshold: 1
+        UnhealthyThreshold: 5
+      InstanceConfiguration:
+        Cpu: 0.25 vCPU
+        Memory: 1 GB
+        InstanceRoleArn: !GetAtt InstanceRole.Arn
+      SourceConfiguration:
+        AutoDeploymentsEnabled: true  # a new image push to the tag redeploys the service
+        AuthenticationConfiguration:
+          AccessRoleArn: !GetAtt EcrAccessRole.Arn
+        ImageRepository:
+          ImageIdentifier: !Sub "${Repository.RepositoryUri}:${ImageTag}"
+          ImageRepositoryType: ECR
+          ImageConfiguration:
+            Port: "8080"
+            StartCommand: !Ref StartCommand
+            RuntimeEnvironmentVariables:
+              - Name: AGENT_BACKEND
+                Value: agentcore
+              - Name: AGENT_RUNTIME_ARN
+                Value: !Ref AgentRuntimeArn
+              - Name: AWS_REGION
+                Value: !Ref AWS::Region
+              - Name: AGENTCORE_SESSION_ID
+                Value: chaser-web-shared-demo-session-0000000001  # fixed runtime session shared by every visitor
+              - Name: SWEEP_INTERVAL_SECONDS
+                Value: "0"  # visitors start sweeps; no scheduled Bedrock spend
+              - Name: CHASER_DB_PATH
+                Value: /tmp/chaser.db
+              - Name: CHASER_SESSIONS_DIR
+                Value: /tmp/sessions
+              - Name: DEMO_TODAY
+                Value: "2026-09-12"
+
+Outputs:
+  RepositoryUri:
+    Value: !GetAtt Repository.RepositoryUri
+  BuildProjectName:
+    Value: !Ref BuildProject
+  ServiceUrl:
+    Condition: CreateServiceCond
+    Value: !Sub "https://${Service.ServiceUrl}"
+  ServiceArn:
+    Condition: CreateServiceCond
+    Value: !GetAtt Service.ServiceArn

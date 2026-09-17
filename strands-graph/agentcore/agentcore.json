@@ -1,0 +1,50 @@
+{
+  "$schema": "https://schema.agentcore.aws.dev/v1/agentcore.json",
+  "name": "Chaser",
+  "version": 1,
+  "tags": {
+    "agentcore:created-by": "agentcore-cli",
+    "agentcore:project-name": "Chaser",
+    "hackathon": "agents-for-humans"
+  },
+  "runtimes": [
+    {
+      "name": "ChaserAgent",
+      "build": "CodeZip",
+      "entrypoint": "main.py",
+      "codeLocation": ".",
+      "runtimeVersion": "PYTHON_3_12",
+      "networkMode": "PUBLIC",
+      "protocol": "HTTP",
+      "envVars": [
+        {
+          "name": "BEDROCK_MODEL_ID",
+          "value": "global.anthropic.claude-sonnet-4-6"
+        },
+        {
+          "name": "DEMO_TODAY",
+          "value": "2026-09-12"
+        },
+        {
+          "name": "CHASER_DB_PATH",
+          "value": "/tmp/chaser.db"
+        },
+        {
+          "name": "CHASER_SESSIONS_DIR",
+          "value": "/tmp/sessions"
+        }
+      ],
+      "instrumentation": {
+        "enableOtel": true
+      }
+    }
+  ],
+  "memories": [],
+  "credentials": [],
+  "payments": [],
+  "evaluators": [],
+  "onlineEvalConfigs": [],
+  "agentCoreGateways": [],
+  "policyEngines": [],
+  "managedBy": "CDK"
+}

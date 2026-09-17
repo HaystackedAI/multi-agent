@@ -1,0 +1,110 @@
+[
+  {
+    "id": "EM-01",
+    "date": "2026-09-05",
+    "from_name": "Wen Zhao",
+    "from_email": "wen.zhao@orbitallabs.example",
+    "client_id": "C-ORBIT",
+    "subject": "Re: Second notice: INV-1034",
+    "body": "Hi, sorry for the delay on this. Our bridge round closed yesterday and finance is processing INV-1034 this week. You should see it by the 18th. Thanks for your patience."
+  },
+  {
+    "id": "EM-02",
+    "date": "2026-09-10",
+    "from_name": "Dr. Elaine Marsh",
+    "from_email": "elaine@northwinddental.example",
+    "client_id": "C-NORTH",
+    "subject": "INV-1040 - please resend",
+    "body": "Could you resend INV-1040? Our accounts-payable address changed in August and the original went to the old mailbox. Please send it to ap@northwinddental.example and we will get it into this month's run."
+  },
+  {
+    "id": "EM-03",
+    "date": "2026-09-11",
+    "from_name": "Marcus Reyes",
+    "from_email": "marcus@bluefinmedia.example",
+    "client_id": "C-BLUE",
+    "subject": "Automatic reply: Out of office",
+    "body": "I am out of the office until Monday Sep 15 with limited email access. For urgent matters contact hello@bluefinmedia.example."
+  },
+  {
+    "id": "EM-04",
+    "date": "2026-09-08",
+    "from_name": "Leah Kim",
+    "from_email": "leah@brightpathtutoring.example",
+    "client_id": null,
+    "subject": "Website redesign project?",
+    "body": "Hi! Rosa at Greenleaf recommended you. We run a tutoring center and need a new website before the spring enrollment push. Do you have capacity in October?"
+  },
+  {
+    "id": "EM-05",
+    "date": "2026-09-09",
+    "from_name": "Acme Robotics AP",
+    "from_email": "ap@acmerobotics.example",
+    "client_id": "C-ACME",
+    "subject": "Invoice 1047 received",
+    "body": "This is to confirm invoice INV-1047 has been received and entered into our payment queue with a scheduled date of Oct 5, 2026. No action is needed."
+  },
+  {
+    "id": "EM-06",
+    "date": "2026-09-02",
+    "from_name": "Rosa Delgado",
+    "from_email": "rosa@greenleaflandscaping.example",
+    "client_id": "C-GREEN",
+    "subject": "Re: INV-1044",
+    "body": "Flyers look great. Check 2231 for $920 is in the mail today."
+  },
+  {
+    "id": "EM-07",
+    "date": "2026-08-30",
+    "from_name": "Priya Natarajan",
+    "from_email": "priya@harborandvine.example",
+    "client_id": "C-HARB",
+    "subject": "Re: INV-1041",
+    "body": "Thanks for the signage files! Sending half now and the rest at month end once the patio season settles. Hope that works."
+  },
+  {
+    "id": "EM-08",
+    "date": "2026-09-06",
+    "from_name": "Freelance Weekly",
+    "from_email": "news@freelanceweekly.example",
+    "client_id": null,
+    "subject": "This week: pricing your retainers",
+    "body": "Newsletter content."
+  },
+  {
+    "id": "EM-09",
+    "date": "2026-09-10",
+    "from_name": "Northwind Dental AP",
+    "from_email": "ap@northwinddental.example",
+    "client_id": "C-NORTH",
+    "subject": "Wire sent: INV-1043",
+    "body": "Wire for INV-1043 was released today. Note our bank deducts a $30 outgoing wire fee, so the amount received will be $2,120."
+  },
+  {
+    "id": "EM-10",
+    "date": "2026-09-04",
+    "from_name": "Sam Ortega, CPA",
+    "from_email": "sam@ortegatax.example",
+    "client_id": null,
+    "subject": "Q3 estimated tax due Sep 15",
+    "body": "Reminder that your Q3 federal estimated payment is due Sep 15. Send me your August expenses when you get a chance."
+  },
+  {
+    "id": "EM-11",
+    "date": "2026-09-11",
+    "from_name": "Dana Whitfield",
+    "from_email": "dana.whitfield@acmerobotics.example",
+    "client_id": "C-ACME",
+    "subject": "Phase 3 kickoff",
+    "body": "Great kickoff yesterday. Can you share the Figma link with the wider team? Also, AP tells me they are still working through August; I will nudge them."
+  },
+  {
+    "id": "EM-12",
+    "date": "2026-09-07",
+    "from_name": "Marcus Reyes",
+    "from_email": "marcus@bluefinmedia.example",
+    "client_id": "C-BLUE",
+    "subject": "October batch timing",
+    "body": "Quick question on the October social templates: could we get the first drafts by the 3rd? Nothing to do with billing, just planning."
+  }
+]

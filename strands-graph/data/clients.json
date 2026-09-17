@@ -1,0 +1,79 @@
+[
+  {
+    "id": "C-ACME",
+    "name": "Acme Robotics",
+    "contact_name": "Dana Whitfield",
+    "email": "dana.whitfield@acmerobotics.example",
+    "ap_email": "ap@acmerobotics.example",
+    "terms_days": 30,
+    "late_fee_clause": true,
+    "late_fee_pct_month": 1.5,
+    "notes": "Large account. Always pays, but late; their AP department runs a slow queue. Firm but professional tone is fine."
+  },
+  {
+    "id": "C-BLUE",
+    "name": "Bluefin Media",
+    "contact_name": "Marcus Reyes",
+    "email": "marcus@bluefinmedia.example",
+    "ap_email": null,
+    "terms_days": 15,
+    "late_fee_clause": false,
+    "late_fee_pct_month": null,
+    "notes": "New client (second invoice). Keep it light; we want the retainer."
+  },
+  {
+    "id": "C-HARB",
+    "name": "Harbor & Vine Cafe",
+    "contact_name": "Priya Natarajan",
+    "email": "priya@harborandvine.example",
+    "ap_email": null,
+    "terms_days": 15,
+    "late_fee_clause": false,
+    "late_fee_pct_month": null,
+    "notes": "Friend of a friend, be gentle. Small business; sometimes pays in two halves."
+  },
+  {
+    "id": "C-NORTH",
+    "name": "Northwind Dental",
+    "contact_name": "Dr. Elaine Marsh",
+    "email": "elaine@northwinddental.example",
+    "ap_email": "ap@northwinddental.example",
+    "terms_days": 30,
+    "late_fee_clause": true,
+    "late_fee_pct_month": 1.0,
+    "notes": "Reliable payer. Their accounts-payable mailbox changed in August 2026."
+  },
+  {
+    "id": "C-PIXEL",
+    "name": "Pixel Forge Studio",
+    "contact_name": "Tomas Lindqvist",
+    "email": "tomas@pixelforge.example",
+    "ap_email": null,
+    "terms_days": 30,
+    "late_fee_clause": true,
+    "late_fee_pct_month": 1.5,
+    "notes": "Went quiet after the project wrapped in July. Contract includes a 1.5% per month late fee."
+  },
+  {
+    "id": "C-GREEN",
+    "name": "Greenleaf Landscaping",
+    "contact_name": "Rosa Delgado",
+    "email": "rosa@greenleaflandscaping.example",
+    "ap_email": null,
+    "terms_days": 15,
+    "late_fee_clause": false,
+    "late_fee_pct_month": null,
+    "notes": "Pays promptly, usually by paper check."
+  },
+  {
+    "id": "C-ORBIT",
+    "name": "Orbital Labs",
+    "contact_name": "Wen Zhao",
+    "email": "wen.zhao@orbitallabs.example",
+    "ap_email": null,
+    "terms_days": 30,
+    "late_fee_clause": true,
+    "late_fee_pct_month": 1.5,
+    "notes": "Early-stage startup; cash flow is lumpy. Two reminders already sent on INV-1034."
+  }
+]

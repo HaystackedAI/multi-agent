@@ -1,0 +1,48 @@
+# Chart of accounts used by the bookkeeper to categorize expenses.
+# `hints` are merchant/memo keywords that suggest the category.
+expense_categories:
+  - id: software_subscriptions
+    label: Software and subscriptions
+    hints: [figma, adobe, notion, github, google workspace, dropbox, zoom]
+  - id: rent_coworking
+    label: Rent and coworking
+    hints: [coworking, wework, foundry, desk, office rent]
+  - id: meals_client
+    label: Client meals (50% deductible)
+    hints: [restaurant, lunch, dinner, spoon, bistro, cafe]
+  - id: equipment_hardware
+    label: Equipment and hardware
+    hints: [apple store, b&h, best buy, laptop, monitor, camera]
+  - id: vehicle_fuel
+    label: Vehicle and fuel
+    hints: [shell, chevron, exxon, fuel, gas, parking]
+  - id: insurance
+    label: Business insurance
+    hints: [hiscox, insurance, next insurance]
+  - id: postage_shipping
+    label: Postage and shipping
+    hints: [usps, fedex, ups, postage]
+  - id: hosting_domains
+    label: Hosting and domains
+    hints: [cloudflare, vercel, aws, netlify, godaddy, namecheap, hosting]
+  - id: professional_fees
+    label: Professional fees (legal, accounting)
+    hints: [cpa, attorney, legal, accounting]
+  - id: bank_fees
+    label: Bank and payment processing fees
+    hints: [wire fee, stripe fee, service charge]
+  - id: office_supplies
+    label: Office supplies and coffee
+    hints: [staples, office depot, coffee, blue bottle]
+  - id: other_expense
+    label: Other expense
+    hints: []
+income_categories:
+  - id: client_revenue
+    label: Client revenue
+  - id: other_income
+    label: Other income (unmatched deposits)
+non_pnl:
+  - id: owner_transfer
+    label: Owner transfer (not an expense)
+    hints: [transfer to savings, transfer]

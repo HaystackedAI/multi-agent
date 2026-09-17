@@ -1,0 +1,19 @@
+[
+  {"id": "TX-2001", "date": "2026-09-09", "amount": 920.00, "kind": "deposit", "memo": "DEPOSIT CHECK 2231 GREENLEAF LANDSCAPING", "merchant": "Greenleaf Landscaping"},
+  {"id": "TX-2002", "date": "2026-09-10", "amount": 2120.00, "kind": "deposit", "memo": "INCOMING WIRE NORTHWIND DENTAL PC REF 88213", "merchant": "Northwind Dental"},
+  {"id": "TX-2003", "date": "2026-09-08", "amount": 600.00, "kind": "deposit", "memo": "ACH CREDIT HARBOR AND VINE CAFE", "merchant": "Harbor & Vine Cafe"},
+  {"id": "TX-2004", "date": "2026-09-11", "amount": 500.00, "kind": "deposit", "memo": "ZELLE J. PARK", "merchant": "J. Park"},
+
+  {"id": "TX-2101", "date": "2026-08-15", "amount": -15.00, "kind": "expense", "memo": "FIGMA MONTHLY", "merchant": "Figma"},
+  {"id": "TX-2102", "date": "2026-08-18", "amount": -59.99, "kind": "expense", "memo": "ADOBE CREATIVE CLOUD", "merchant": "Adobe"},
+  {"id": "TX-2103", "date": "2026-09-01", "amount": -450.00, "kind": "expense", "memo": "FOUNDRY COWORKING SEPT DESK", "merchant": "Foundry Coworking"},
+  {"id": "TX-2104", "date": "2026-08-27", "amount": -68.40, "kind": "expense", "memo": "THE COPPER SPOON", "merchant": "The Copper Spoon"},
+  {"id": "TX-2105", "date": "2026-08-29", "amount": -1299.00, "kind": "expense", "memo": "APPLE STORE R123", "merchant": "Apple Store"},
+  {"id": "TX-2106", "date": "2026-09-04", "amount": -52.30, "kind": "expense", "memo": "SHELL OIL 57442", "merchant": "Shell"},
+  {"id": "TX-2107", "date": "2026-09-01", "amount": -138.00, "kind": "expense", "memo": "HISCOX INSURANCE", "merchant": "Hiscox"},
+  {"id": "TX-2108", "date": "2026-08-22", "amount": -12.00, "kind": "expense", "memo": "USPS PO 0442", "merchant": "USPS"},
+  {"id": "TX-2109", "date": "2026-09-07", "amount": -8.75, "kind": "expense", "memo": "BLUE BOTTLE COFFEE", "merchant": "Blue Bottle Coffee"},
+  {"id": "TX-2110", "date": "2026-08-20", "amount": -29.00, "kind": "expense", "memo": "NOTION LABS", "merchant": "Notion"},
+  {"id": "TX-2111", "date": "2026-08-25", "amount": -2000.00, "kind": "transfer", "memo": "ONLINE TRANSFER TO SAVINGS 4471", "merchant": null},
+  {"id": "TX-2112", "date": "2026-09-03", "amount": -95.00, "kind": "expense", "memo": "CLOUDFLARE HOSTING", "merchant": "Cloudflare"}
+]

@@ -1,0 +1,13 @@
+.venv/
+.data/
+__pycache__/
+*.pyc
+.env
+.env.local
+agentcore/.cli/
+agentcore/.env.local
+.pytest_cache/
+.ruff_cache/
+node_modules/
+dist/
+*.egg-info/

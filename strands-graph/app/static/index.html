@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chaser</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">Chaser</span>
+      <span class="tagline">weekly close for people who bill for a living</span>
+    </div>
+    <div class="topbar-right">
+      <span id="last-run" class="muted">No close run yet</span>
+      <button id="run-btn" class="btn btn-primary">Run weekly close</button>
+    </div>
+  </header>
+
+  <div id="banner" class="banner hidden"></div>
+
+  <main class="layout">
+    <section class="col col-main">
+      <div class="panel" id="approvals-panel">
+        <div class="panel-head">
+          <h2>Needs your decision <span id="pending-count" class="count">0</span></h2>
+          <span class="muted small">Only client-facing or ambiguous actions land here.</span>
+        </div>
+        <div id="live" class="live hidden" aria-live="polite">
+          <div class="live-head"><span class="spinner"></span><span id="live-title">Weekly close running</span><span id="live-elapsed" class="muted small"></span></div>
+          <ol id="live-lines" class="live-lines"></ol>
+        </div>
+        <div id="approvals"></div>
+      </div>
+
+      <div class="panel" id="report-panel">
+        <div class="panel-head"><h2>Weekly close report</h2><span id="report-meta" class="muted small"></span></div>
+        <div id="report" class="report"></div>
+      </div>
+
+      <div class="panel" id="activity-panel">
+        <div class="panel-head">
+          <h2>What I did while you were away</h2>
+          <div class="legend">
+            <span class="agent-tag reconciler">reconciler</span>
+            <span class="agent-tag collector">collector</span>
+            <span class="agent-tag bookkeeper">bookkeeper</span>
+            <span class="agent-tag reporter">reporter</span>
+            <span class="agent-tag owner">owner</span>
+          </div>
+        </div>
+        <ul id="activity" class="activity"></ul>
+      </div>
+    </section>
+
+    <aside class="col col-side">
+      <div class="panel" id="aging-panel">
+        <div class="panel-head"><h2>Receivables aging</h2><span id="cash-week" class="muted small"></span></div>
+        <div id="aging"></div>
+      </div>
+
+      <div class="panel" id="books-panel">
+        <div class="panel-head"><h2>Books</h2></div>
+        <div id="books"></div>
+      </div>
+
+      <div class="panel" id="ask-panel">
+        <div class="panel-head"><h2>Ask Chaser</h2></div>
+        <form id="ask-form" class="ask-form">
+          <input id="ask-input" type="text" placeholder="Who still owes me money?" autocomplete="off" />
+          <button class="btn" type="submit">Ask</button>
+        </form>
+        <div id="ask-answer" class="ask-answer muted small"></div>
+      </div>
+
+      <div class="panel" id="resolved-panel">
+        <div class="panel-head"><h2>Recently decided</h2></div>
+        <ul id="resolved" class="resolved"></ul>
+      </div>
+    </aside>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
