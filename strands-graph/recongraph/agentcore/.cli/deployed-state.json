@@ -1,0 +1,17 @@
+{
+  "targets": {
+    "default": {
+      "resources": {
+        "runtimes": {
+          "ReconGraphAgent": {
+            "runtimeId": "recongraph_ReconGraphAgent-ru83FjDv1T",
+            "runtimeArn": "arn:aws:bedrock-agentcore:us-east-1:822206589627:runtime/recongraph_ReconGraphAgent-ru83FjDv1T",
+            "roleArn": "arn:aws:iam::822206589627:role/AgentCore-recongraph-defa-ApplicationAgentReconGrap-wFflnM4iY9bB"
+          }
+        },
+        "stackName": "AgentCore-recongraph-default",
+        "deployHash": "f02fef0057d077da"
+      }
+    }
+  }
+}

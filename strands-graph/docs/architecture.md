@@ -87,5 +87,4 @@ reseeds when the DB is empty; a production deployment would point the store at a
 - `main.py`: `BedrockAgentCoreApp` entrypoint; dispatches `sweep | decide | ask | status | seed`.
 - `app/server.py`: FastAPI UI with `Backend` protocol (`backend.py`): `LocalBackend` runs the
   service in-process, `AgentCoreBackend` calls `invoke_agent_runtime` with a stable session id.
-- `agentcore/agentcore.json`: CodeZip runtime `ChaserAgent`, Python 3.12, public network, OTel on.
-- `Dockerfile`: ARM64 container alternative, non-root, `python main.py` on 8080.
+- `recongraph/agentcore/agentcore.json`: CodeZip runtime `ReconGraphAgent`, deployed via `agentcore deploy`.

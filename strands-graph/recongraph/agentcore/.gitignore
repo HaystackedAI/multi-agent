@@ -13,7 +13,3 @@ cdk/node_modules/
 
 # Exception: Commit the State
 !.cli/deployed-state.json
-
-# CodeZip build output
-*.zip
-*/staging/

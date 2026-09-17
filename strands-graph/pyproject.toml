@@ -3,50 +3,38 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "chaser"
+name = "chaser-web"
 version = "0.1.0"
-description = "A weekly-close agent for freelancers: reconciles payments, chases overdue invoices, and asks you only before anything reaches a client."
+description = "Web UI for Chaser: a decision inbox that calls the weekly-close agent on Amazon Bedrock AgentCore."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Ritwika Kancharla" }]
 dependencies = [
-    "strands-agents>=1.55.0",
-    "strands-agents-tools>=0.8.8",
-    "bedrock-agentcore>=1.22.0",
-    "aws-opentelemetry-distro",
     "fastapi[standard]",
     "uvicorn[standard]",
     "pydantic>=2",
     "boto3",
-    "pyyaml",
     "python-dotenv",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-asyncio", "httpx", "ruff", "botocore[crt]"]
-anthropic = ["strands-agents[anthropic]"]
+dev = ["httpx", "ruff"]
 
 [tool.fastapi]
 # FastAPI Cloud deploys the whole repo from the root (leave the console's
-# "Application Directory" blank/root). The FastAPI app is app/server.py; the
-# repo-root main.py is an AgentCore app, not FastAPI, so auto-discovery would
-# misfire — name the entrypoint explicitly. `chaser` is installed as a package
-# from src/ (see packages.find below), so server.py's imports resolve.
+# "Application Directory" blank/root). The FastAPI app is app/server.py; name
+# the entrypoint explicitly so auto-discovery does not misfire.
 entrypoint = "app.server:app"
 
 [tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-asyncio_mode = "auto"
-filterwarnings = ["ignore::DeprecationWarning"]
+where = ["."]
+include = ["app*"]
 
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-extend-exclude = [".venv", ".data", "agentcore/.cli"]
+extend-exclude = [".venv", "recongraph"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B"]

@@ -1,10 +1,13 @@
-"""FastAPI web app: decision inbox UI + JSON API. Run: uvicorn app.server:app --reload --port 8000."""
+"""FastAPI web app: decision inbox UI + JSON API. Run: uvicorn app.server:app --reload --port 8000.
+
+The web app is a thin client. It never runs the agent graph in-process — every action is a call to
+the recongraph agent (deployed AgentCore Runtime, or a local server via AGENT_LOCAL_URL). See app/agent.py.
+"""
 
 from __future__ import annotations
 
 import logging
 import os
-import sys
 import threading
 import time
 from contextlib import asynccontextmanager
@@ -16,34 +19,28 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
+from app.agent import AgentClient
 
-from chaser import service  # noqa: E402
-from chaser.backend import Backend, make_backend  # noqa: E402
-from chaser.config import configure_logging  # noqa: E402
-from chaser.context import get_store  # noqa: E402
-
-configure_logging()
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("chaser.web")
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
-_sweep_lock = threading.Lock()  # web-level guard; service.SWEEP_LOCK guards the graph itself
+_sweep_lock = threading.Lock()
 _state: dict[str, Any] = {
     "sweep_running": False,
     "started_at": None,
     "last_result": None,
     "last_error": None,
 }
-_backend: Backend | None = None
+_agent: AgentClient | None = None
 
 
-def backend() -> Backend:
-    global _backend
-    if _backend is None:
-        _backend = make_backend()
-    return _backend
+def agent() -> AgentClient:
+    global _agent
+    if _agent is None:
+        _agent = AgentClient()
+    return _agent
 
 
 def _run_sweep_bg() -> None:
@@ -52,7 +49,7 @@ def _run_sweep_bg() -> None:
     _state["sweep_running"] = True
     _state["started_at"] = time.time()
     try:
-        result = backend().sweep()
+        result = agent().sweep()
         _state["last_result"] = {"ok": result.get("ok"), "cycle_id": result.get("cycle_id")}
         _state["last_error"] = None if result.get("ok") else result.get("error")
     except Exception as exc:  # keep the server alive
@@ -65,20 +62,20 @@ def _run_sweep_bg() -> None:
 
 
 def _keepalive() -> None:
-    """Ping the AgentCore session so its microVM (and the state in it) stays warm.
+    """Ping the agent session so its microVM (and the state in it) stays warm.
 
     The runtime ends an idle session after 15 minutes; the next call then pays a cold start and
     starts from an empty store. A cheap ``status`` call every few minutes avoids both while the
-    web app is up. Set KEEPALIVE_SECONDS=0 to disable.
+    web app is up. Set KEEPALIVE_SECONDS=0 to disable (default 0 when using a local agent).
     """
-    default = "600" if os.getenv("AGENT_BACKEND", "local").lower() == "agentcore" else "0"
+    default = "0" if os.getenv("AGENT_LOCAL_URL") else "600"
     interval = int(os.getenv("KEEPALIVE_SECONDS", default) or 0)
     if interval <= 0:
         return
     while True:
         time.sleep(interval)
         try:
-            backend().status()
+            agent().status()
         except Exception as exc:  # noqa: BLE001
             logger.warning("keepalive failed: %s", exc)
 
@@ -94,9 +91,6 @@ def _scheduler() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    if os.getenv("AGENT_BACKEND", "local").lower() == "local" and not get_store().list_clients():
-        logger.info("empty store; seeding demo data")
-        service.seed()
     threading.Thread(target=_scheduler, name="chaser-scheduler", daemon=True).start()
     threading.Thread(target=_keepalive, name="chaser-keepalive", daemon=True).start()
     if os.getenv("SWEEP_ON_START", "0") == "1":
@@ -123,14 +117,14 @@ def index() -> FileResponse:
 
 @app.get("/api/health")
 def health() -> dict[str, Any]:
-    return {"ok": True, "backend": os.getenv("AGENT_BACKEND", "local"), "sweep_running": _state["sweep_running"]}
+    return {"ok": True, "target": agent().target, "sweep_running": _state["sweep_running"]}
 
 
 @app.get("/api/state")
 def state() -> dict[str, Any]:
-    # Ask the backend, not the local store: with AGENT_BACKEND=agentcore the state lives in the runtime.
+    # State lives in the agent process, not here; ask it.
     try:
-        data = backend().state()
+        data = agent().state()
     except Exception as exc:  # keep the UI polling
         logger.exception("state failed")
         data = {"ok": False, "error": str(exc), "sweep_running": False}
@@ -152,7 +146,7 @@ def sweep() -> dict[str, Any]:
 
 @app.post("/api/decisions/{decision_id}")
 def decide(decision_id: str, body: DecideBody) -> dict[str, Any]:
-    result = backend().decide(decision_id, body.response, body.edits)
+    result = agent().decide(decision_id, body.response, body.edits)
     if not result.get("ok") and "unknown decision" in str(result.get("error", "")):
         raise HTTPException(status_code=404, detail=result["error"])
     return result
@@ -164,7 +158,7 @@ def ask(body: AskBody) -> dict[str, Any]:
     if not prompt:
         raise HTTPException(status_code=422, detail="prompt is required")
     try:
-        return backend().ask(prompt)
+        return agent().ask(prompt)
     except Exception as exc:
         logger.exception("ask failed")
         return JSONResponse(status_code=502, content={"ok": False, "error": str(exc)})
@@ -172,7 +166,7 @@ def ask(body: AskBody) -> dict[str, Any]:
 
 @app.post("/api/seed")
 def reseed() -> dict[str, Any]:
-    return {"ok": True, "counts": service.seed()}
+    return agent().seed()
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

@@ -2,7 +2,7 @@
 
 A weekly-close agent for freelancers: reconciles payments, chases overdue invoices, and asks you only before anything reaches a client.
 
-**Live demo:** https://d344dcrnpg.us-east-1.awsapprunner.com (the web UI on AWS App Runner, calling the four-agent Graph on Amazon Bedrock AgentCore Runtime). Press "Run weekly close", wait about two minutes, and approve, edit or skip the proposals. It is a shared demo instance: everyone sees the same books, and its state resets to the demo dataset after 15 idle minutes.
+The web UI calls the four-agent Graph running on Amazon Bedrock AgentCore Runtime. Press "Run weekly close", wait about two minutes, and approve, edit or skip the proposals. The demo state resets to the demo dataset after 15 idle minutes.
 
 ## The problem
 
@@ -104,36 +104,25 @@ make lint    # ruff check .
 
 Web API: `GET /api/state`, `POST /api/sweep`, `POST /api/decisions/{id}` `{"response": "yes"|"no", "edits": {}}`, `POST /api/ask` `{"prompt"}`, `GET /api/health`, `POST /api/seed`.
 
-## Deploy to Amazon Bedrock AgentCore
+## Deploy
 
-```bash
-npm i -g @aws/agentcore
-# edit agentcore/aws-targets.json: replace <ACCOUNT_ID> with your account id (region us-east-1)
-./scripts/deploy_agentcore.sh          # agentcore validate && agentcore deploy -y, from the repo root
-agentcore invoke '{"action": "status"}'
-agentcore invoke '{"action": "ask", "question": "Who still owes me money?"}'
-agentcore invoke '{"action": "sweep"}'
-```
+Two independent deploys:
 
-`agentcore/agentcore.json` defines a CodeZip runtime `ChaserAgent` (Python 3.12, `main.py`, CDK-managed; the generated CDK app lives in `agentcore/cdk`). The CLI wraps whatever you pass to `invoke` as `{"prompt": "..."}`; `main.py` unwraps a JSON object from that field, and treats any other text as an `ask`. `Dockerfile` is the ARM64 container alternative. The runtime filesystem is read-only except `/tmp`, so `CHASER_DB_PATH` and `CHASER_SESSIONS_DIR` point there and the entrypoint seeds the demo data on first use; point them (or a store implementation) at durable storage for real use.
+- **Agent** → Amazon Bedrock AgentCore, via the AgentCore CLI (CodeZip, no Docker):
 
-Deployed for the hackathon as `arn:aws:bedrock-agentcore:us-east-1:796330847946:runtime/Chaser_ChaserAgent-20whYPEX0A` (stack `AgentCore-Chaser-default`).
+  ```bash
+  cd recongraph && agentcore deploy
+  agentcore invoke '{"action": "status"}'
+  agentcore invoke '{"action": "sweep"}'
+  ```
 
-Point the web UI at the deployed runtime:
+  The runtime filesystem is read-only except `/tmp`, so `CHASER_DB_PATH` and `CHASER_SESSIONS_DIR` point there and the entrypoint seeds the demo data on first use; point them (or a store implementation) at durable storage for real use.
 
-```bash
-AGENT_BACKEND=agentcore AGENT_RUNTIME_ARN=arn:aws:bedrock-agentcore:us-east-1:<ACCOUNT_ID>:runtime/ChaserAgent-xxxx make serve
-```
+- **Web app** → deployed through CI/CD, running `uvicorn app.server:app` with `AGENT_BACKEND=agentcore` and `AGENT_RUNTIME_ARN` set to the deployed runtime. Run it locally against the deployed agent with:
 
-### Host the web UI (the live demo URL)
-
-```bash
-make deploy-web    # scripts/deploy_web.sh
-```
-
-`infra/web.yaml` is one CloudFormation stack: an ECR repository, a CodeBuild project that clones this repo from GitHub and builds the `Dockerfile` (so no local Docker is needed), and an AWS App Runner service that runs `uvicorn app.server:app` with `AGENT_BACKEND=agentcore`. The App Runner instance role is allowed exactly one action, `bedrock-agentcore:InvokeAgentRuntime` on this runtime; no AWS keys are stored anywhere. The service uses a fixed `AGENTCORE_SESSION_ID`, so every visitor shares one runtime session, and `SWEEP_INTERVAL_SECONDS=0` so only visitors start sweeps. Re-run `make deploy-web` after pushing to rebuild; App Runner auto-deploys the new image.
-
-Live: https://d344dcrnpg.us-east-1.awsapprunner.com (stack `chaser-web`).
+  ```bash
+  AGENT_BACKEND=agentcore AGENT_RUNTIME_ARN=<runtime-arn> make serve
+  ```
 
 ## Project structure
 
@@ -159,8 +148,8 @@ src/chaser/
   cli.py  seed.py          CLI over the service functions
 data/                      clients, invoices, bank_transactions, receipts, inbox (JSON), chart_of_accounts.yaml
 docs/                      architecture.png/.svg/.excalidraw/.md, submission.md, demo-script.md, decisions.md
-agentcore/                 agentcore.json, aws-targets.json
-scripts/                   demo.sh, deploy_agentcore.sh
+recongraph/                AgentCore project (agentcore deploy): agentcore.json, app/ReconGraphAgent
+scripts/                   demo.sh
 tests/                     scripted_model.py + 43 tests
 ```
 
