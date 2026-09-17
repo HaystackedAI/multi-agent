@@ -1,0 +1,36 @@
+# FastAPI Cloud deploy config for the Chaser web app.
+#
+# In the FastAPI Cloud console, set the app's "Application Directory" to `app`.
+# FastAPI Cloud then installs dependencies from this file and runs the app rooted
+# here. The full repo is still uploaded, so app/server.py resolves `chaser` from
+# the repo-root src/ via its own sys.path bootstrap.
+#
+# `entrypoint` is required because the module is server.py (not the auto-discovered
+# main.py/app.py), and the repo-root main.py is an AgentCore app, not FastAPI.
+
+[project]
+name = "chaser-web"
+version = "0.1.0"
+description = "Chaser decision-inbox web app (FastAPI Cloud deployment)."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]",
+    "uvicorn[standard]",
+    "pydantic>=2",
+    "strands-agents>=1.55.0",
+    "strands-agents-tools>=0.8.8",
+    "bedrock-agentcore>=1.22.0",
+    "aws-opentelemetry-distro",
+    "boto3",
+    "pyyaml",
+    "python-dotenv",
+]
+
+[tool.fastapi]
+# Relative to the application directory (app/), so the module is `server`.
+entrypoint = "server:app"
+
+[tool.uv]
+# Deps-only environment: server.py is a module, not a distributable package,
+# so don't try to build/install this directory as one.
+package = false
