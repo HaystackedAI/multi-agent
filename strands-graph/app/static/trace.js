@@ -66,7 +66,7 @@
       '<span class="dt muted small">' + dt + "</span> " +
       body(f);
     list.appendChild(li);
-    list.scrollTop = list.scrollHeight;
+    // Append only; never move the viewport — the reader controls scrolling.
   }
 
   function stop(label) {
