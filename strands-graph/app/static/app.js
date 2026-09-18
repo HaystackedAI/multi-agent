@@ -151,12 +151,12 @@
 
   // ------------------------------------------------------------------ aging
   function renderAging() {
-    const a = state.aging;
-    const total = Object.values(a).reduce((s, b) => s + b.total, 0) || 1;
+    const a = state.aging || {};
+    const total = Object.values(a).reduce((s, b) => s + (b.total || 0), 0) || 1;
     const labels = { current: "Current (not yet due)", d1_30: "1-30 days", d31_60: "31-60 days", d61_plus: "61+ days" };
     $("#cash-week").textContent = `collected this week ${money(state.cash_collected_this_week)}`;
     $("#aging").innerHTML = Object.keys(labels).map((k) => {
-      const b = a[k];
+      const b = a[k] || { total: 0, count: 0, invoices: [] };
       return `<div class="bucket">
         <div class="bucket-row"><span>${labels[k]} <span class="muted">(${b.count})</span></span><b>${money(b.total)}</b></div>
         <div class="bar ${k}"><span style="width:${Math.max(2, (b.total / total) * 100)}%"></span></div>
