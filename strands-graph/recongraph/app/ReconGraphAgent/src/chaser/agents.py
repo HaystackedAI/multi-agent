@@ -27,6 +27,7 @@ from .approval import ApprovalGate
 from .hooks import AuditHook, ProgressHook
 from .model import make_model
 from .store import Store
+from .trace import TraceEmitter, TraceStream
 
 NODE_NAMES: tuple[str, ...] = ("reconciler", "collector", "bookkeeper", "reporter")
 
@@ -72,10 +73,18 @@ def make_node_agent(
     gate: ApprovalGate | None = None,
     record_direct_tool_call: bool = True,
     hooks: list[Any] | None = None,
+    extra_hooks: list[Any] | None = None,
 ) -> Agent:
-    """Build one specialist agent. ``gate`` is attached only when given (collector in the graph)."""
+    """Build one specialist agent. ``gate`` is attached only when given (collector in the graph).
+
+    ``extra_hooks`` are appended to the defaults (used to attach a ``TraceEmitter`` for the live
+    SSE trace without displacing the audit/progress hooks).
+    """
     if node not in NODE_TOOLS:
         raise KeyError(f"unknown node {node}")
+    base_hooks = hooks if hooks is not None else [AuditHook(), ProgressHook()]
+    if extra_hooks:
+        base_hooks = [*base_hooks, *extra_hooks]
     return Agent(
         model=model,
         name=node,
@@ -84,7 +93,7 @@ def make_node_agent(
         system_prompt=prompts.render(NODE_PROMPTS[node], config.today().isoformat()),
         tools=NODE_TOOLS[node],
         interventions=[gate] if gate else None,
-        hooks=hooks if hooks is not None else [AuditHook(), ProgressHook()],
+        hooks=base_hooks,
         conversation_manager=SlidingWindowConversationManager(window_size=40),
         callback_handler=None,
         record_direct_tool_call=record_direct_tool_call,
@@ -108,19 +117,28 @@ def build_graph(
     model_factory: ModelFactory = default_model_factory,
     *,
     session_manager: SessionManager | None = None,
+    trace_stream: TraceStream | None = None,
 ) -> tuple[Graph, dict[str, Agent], ApprovalGate]:
-    """Build the weekly-close graph. Returns (graph, node agents by name, the approval gate)."""
+    """Build the weekly-close graph. Returns (graph, node agents by name, the approval gate).
+
+    When ``trace_stream`` is given, a ``TraceEmitter`` is attached to every node and the
+    conditional edge emits an ``edge`` frame, so the whole run can be streamed live (SSE).
+    """
     gate = ApprovalGate()
+    extra = [TraceEmitter(trace_stream)] if trace_stream is not None else None
     agents = {
-        "reconciler": make_node_agent("reconciler", model_factory("reconciler")),
-        "collector": make_node_agent("collector", model_factory("collector"), gate=gate),
-        "bookkeeper": make_node_agent("bookkeeper", model_factory("bookkeeper")),
-        "reporter": make_node_agent("reporter", model_factory("reporter")),
+        "reconciler": make_node_agent("reconciler", model_factory("reconciler"), extra_hooks=extra),
+        "collector": make_node_agent("collector", model_factory("collector"), gate=gate, extra_hooks=extra),
+        "bookkeeper": make_node_agent("bookkeeper", model_factory("bookkeeper"), extra_hooks=extra),
+        "reporter": make_node_agent("reporter", model_factory("reporter"), extra_hooks=extra),
     }
 
     def has_overdue(_state: GraphState) -> bool:
         # Evaluated when the reconciler finishes, so it reflects deposits matched this cycle.
-        return store.count_overdue_open_invoices(config.today()) > 0
+        value = store.count_overdue_open_invoices(config.today()) > 0
+        if trace_stream is not None:
+            trace_stream.emit("edge", name="reconciler->collector", value=bool(value), detail=f"has_overdue={bool(value)}")
+        return value
 
     b = GraphBuilder()
     for name, agent in agents.items():

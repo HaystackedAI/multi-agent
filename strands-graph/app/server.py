@@ -6,6 +6,7 @@ the recongraph agent (deployed AgentCore Runtime, or a local server via AGENT_LO
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import threading
@@ -16,7 +17,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -145,6 +146,21 @@ def sweep() -> dict[str, Any]:
         return {"started": False, "reason": "a sweep is already running"}
     threading.Thread(target=_run_sweep_bg, name="chaser-sweep", daemon=True).start()
     return {"started": True}
+
+
+@app.get("/api/sweep/stream")
+def sweep_stream() -> StreamingResponse:
+    """Relay the agent's live trace to the browser as Server-Sent Events."""
+
+    def gen() -> Any:
+        try:
+            for frame in agent().sweep_stream():
+                yield f"data: {json.dumps(frame, default=str)}\n\n"
+        except Exception as exc:  # surface a terminal frame instead of a dead stream
+            logger.exception("trace stream failed")
+            yield f"data: {json.dumps({'kind': 'done', 'ok': False, 'error': str(exc)})}\n\n"
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
 
 
 @app.post("/api/decisions/{decision_id}")

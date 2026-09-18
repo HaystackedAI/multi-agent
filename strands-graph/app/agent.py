@@ -13,6 +13,7 @@ import os
 import time
 import urllib.request
 import uuid
+from collections.abc import Iterator
 from typing import Any
 
 # A sweep is one synchronous call that can run for minutes. Defaults (60 s read timeout, automatic
@@ -94,6 +95,46 @@ class AgentClient:
 
     def sweep(self) -> dict[str, Any]:
         return self._invoke({"action": "sweep"})
+
+    def _stream_local(self, payload: dict[str, Any]) -> Iterator[str]:
+        req = urllib.request.Request(
+            f"{self.local_url}/invocations",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=INVOKE_READ_TIMEOUT_SECONDS) as resp:
+            for raw in resp:
+                yield raw.decode("utf-8").rstrip("\n")
+
+    def _stream_runtime(self, payload: dict[str, Any]) -> Iterator[str]:
+        for attempt in range(COLD_START_RETRIES + 1):
+            try:
+                response = self.client.invoke_agent_runtime(
+                    agentRuntimeArn=self.runtime_arn,
+                    runtimeSessionId=self.session_id,
+                    payload=json.dumps(payload).encode("utf-8"),
+                )
+                break
+            except Exception as exc:  # noqa: BLE001
+                if attempt >= COLD_START_RETRIES or not _is_cold_start_error(exc):
+                    raise
+                time.sleep(COLD_START_RETRY_SECONDS)
+        for raw in response["response"].iter_lines():
+            yield raw.decode("utf-8") if isinstance(raw, (bytes, bytearray)) else str(raw)
+
+    def sweep_stream(self) -> Iterator[dict[str, Any]]:
+        """Yield the agent's live trace frames (SSE ``data:`` lines parsed back into dicts)."""
+        payload = {"action": "sweep_stream"}
+        lines = self._stream_local(payload) if self.local_url else self._stream_runtime(payload)
+        for line in lines:
+            data = line[len("data:"):].strip() if line.startswith("data:") else line.strip()
+            if not data:
+                continue
+            try:
+                yield json.loads(data)
+            except ValueError:
+                continue
 
     def decide(self, decision_id: str, response: Any, edits: dict[str, Any] | None) -> dict[str, Any]:
         return self._invoke(

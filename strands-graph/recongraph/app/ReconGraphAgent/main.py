@@ -2,6 +2,7 @@
 
 Payload contract (JSON):
     {"action": "sweep"}
+    {"action": "sweep_stream"}  # like sweep, but streams a live trace as SSE (generator entrypoint)
     {"action": "decide", "decision_id": "...", "response": "yes"|"no"|"<text>", "edits": {...}}
     {"action": "ask", "prompt": "..."}
     {"action": "status"}
@@ -94,7 +95,15 @@ def dispatch(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 @app.entrypoint
-def invoke(payload: dict, context: Any = None) -> dict:
+def invoke(payload: dict, context: Any = None) -> Any:
+    # A generator return value is streamed out by AgentCore as text/event-stream (SSE).
+    normalized = _normalize(dict(payload or {}))
+    if normalized.get("action") == "sweep_stream":
+        try:
+            _ensure_seeded()
+        except Exception:
+            logger.exception("seed before trace stream failed")
+        return service.run_sweep_stream()
     return dispatch(payload)
 
 
