@@ -47,6 +47,8 @@
           '<span class="muted small">' + esc(f.detail || "") + "</span>"
         );
       case "done":
+        if (f.skipped)
+          return '<span class="muted">nothing to trace — ' + esc(f.note || "a close is already running") + "</span>";
         return f.ok
           ? "<b>done</b> · report saved · " + ((f.pending || []).length) + " pending decisions"
           : '<b class="err">failed</b>: ' + esc(f.error || "");
@@ -85,7 +87,7 @@
       var f;
       try { f = JSON.parse(e.data); } catch (err) { return; }
       render(f);
-      if (f.kind === "done") stop(f.ok ? "finished" : "failed");
+      if (f.kind === "done") stop(f.skipped ? "a close is already running" : f.ok ? "finished" : "failed");
     };
     source.onerror = function () { stop("stream closed"); };
   }

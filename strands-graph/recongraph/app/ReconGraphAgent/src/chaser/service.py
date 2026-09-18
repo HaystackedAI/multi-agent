@@ -201,6 +201,12 @@ def run_sweep_stream(
     decisions. Intended to be returned from the AgentCore entrypoint, which streams a generator
     out as ``text/event-stream``.
     """
+    # A sweep is already running: do nothing rather than start a second (they share SWEEP_LOCK).
+    # Emit one neutral terminal frame so the client closes the stream cleanly.
+    if SWEEP_LOCK.locked():
+        yield {"kind": "done", "ok": True, "skipped": True, "note": "a close is already running"}
+        return
+
     stream = TraceStream()
     holder: dict[str, Any] = {}
 
@@ -222,6 +228,9 @@ def run_sweep_stream(
             yield item
     worker.join(timeout=2)
     result = holder.get("result") or {"ok": False, "error": "sweep produced no result"}
+    if result.get("error") == "a sweep is already running":  # lost the lock in the race above
+        yield {"kind": "done", "ok": True, "skipped": True, "note": "a close is already running"}
+        return
     yield {
         "kind": "done",
         "ok": bool(result.get("ok")),

@@ -85,7 +85,7 @@ def _keepalive() -> None:
 
 
 def _scheduler() -> None:
-    interval = int(os.getenv("SWEEP_INTERVAL_SECONDS", "900") or 0)
+    interval = int(os.getenv("SWEEP_INTERVAL_SECONDS", "7200") or 0)  # default: every 2 hours
     if interval <= 0:
         return
     while True:

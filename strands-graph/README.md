@@ -91,7 +91,7 @@ make sweep                     # one weekly close from the CLI (calls Bedrock)
 make serve                     # uvicorn app.server:app --reload --port 8000
 ```
 
-Environment variables (all optional, see `.env.example`): `BEDROCK_MODEL_ID` (default `global.anthropic.claude-sonnet-4-6`), `AWS_REGION`, `DEMO_TODAY` (default `2026-09-12`), `CHASER_DB_PATH`, `SESSION_BUCKET`, `AGENT_BACKEND` (`local` | `agentcore`), `AGENT_RUNTIME_ARN`, `SWEEP_INTERVAL_SECONDS` (default 900, `0` disables the scheduler), `SWEEP_ON_START`. `MODEL_PROVIDER=anthropic` with `ANTHROPIC_API_KEY` uses the Anthropic API directly instead of Bedrock.
+Environment variables (all optional, see `.env.example`): `BEDROCK_MODEL_ID` (default `global.anthropic.claude-sonnet-4-6`), `AWS_REGION`, `DEMO_TODAY` (default `2026-09-12`), `CHASER_DB_PATH`, `SESSION_BUCKET`, `AGENT_BACKEND` (`local` | `agentcore`), `AGENT_RUNTIME_ARN`, `SWEEP_INTERVAL_SECONDS` (default 7200 = every 2 hours, `0` disables the scheduler), `SWEEP_ON_START`. `MODEL_PROVIDER=anthropic` with `ANTHROPIC_API_KEY` uses the Anthropic API directly instead of Bedrock.
 
 While the weekly close runs (about two minutes for the four-node graph), the inbox shows a live strip: a timer, which node is working, and that node's own narration as it happens (what it said, which tool it is calling, each result), written by a `ProgressHook` on Strands' `MessageAddedEvent`. With `AGENT_BACKEND=agentcore` the web app also pings the runtime every `KEEPALIVE_SECONDS` (default 600, `0` disables) so the shared session and its state survive AgentCore's 15-minute idle timeout and visitors never pay a cold start.
 
