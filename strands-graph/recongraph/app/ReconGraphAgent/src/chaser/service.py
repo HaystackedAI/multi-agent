@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections.abc import Iterator
 from datetime import date
 from typing import Any
 
@@ -21,6 +22,7 @@ from .models import WeeklyCloseReport
 from .sessions import ASK_SESSION_ID, make_session_manager
 from .store import Store
 from .tools import missing_receipts, week_summary
+from .trace import TraceStream
 
 logger = logging.getLogger(__name__)
 
@@ -119,11 +121,14 @@ def run_sweep(
     model_factory: ModelFactory | None = None,
     *,
     store: Store | None = None,
+    trace_stream: TraceStream | None = None,
 ) -> dict[str, Any]:
     """Run one weekly close: reconciler -> (bookkeeper, collector?) -> reporter -> structured report.
 
     Returns ``{"ok", "cycle_id", "report", "pending_decisions", "actions_taken", "execution_order", "node_summaries"}``.
     Never raises for agent failures; ``ok`` is False and ``error`` is set instead.
+
+    ``trace_stream`` (optional) makes the graph emit live trace frames; see ``run_sweep_stream``.
     """
     model_factory = model_factory or default_model_factory
     store = store or get_store()
@@ -133,7 +138,7 @@ def run_sweep(
     cycle_id = store.start_cycle()
     set_cycle_id(cycle_id)
     try:
-        graph, agents, gate = build_graph(store, model_factory)
+        graph, agents, gate = build_graph(store, model_factory, trace_stream=trace_stream)
         task = prompts.SWEEP_TASK.format(today=today.isoformat())
         logger.info("sweep %s: starting graph", cycle_id)
         result = graph(task)
@@ -180,6 +185,51 @@ def run_sweep(
     finally:
         set_cycle_id(None)
         SWEEP_LOCK.release()
+
+
+# ----------------------------------------------------------------------------- run_sweep_stream
+def run_sweep_stream(
+    model_factory: ModelFactory | None = None,
+    *,
+    store: Store | None = None,
+) -> Iterator[dict[str, Any]]:
+    """Run one weekly close on a worker thread, yielding live trace frames for SSE.
+
+    Reuses :func:`run_sweep` with a :class:`~chaser.trace.TraceStream`; a ``TraceEmitter`` on every
+    node pushes frames (node_enter / thinking / said / tool_call / tool_result / edge) which we
+    drain and yield here. The terminal ``done`` frame carries the saved report and pending
+    decisions. Intended to be returned from the AgentCore entrypoint, which streams a generator
+    out as ``text/event-stream``.
+    """
+    stream = TraceStream()
+    holder: dict[str, Any] = {}
+
+    def _worker() -> None:
+        try:
+            holder["result"] = run_sweep(model_factory=model_factory, store=store, trace_stream=stream)
+        except Exception as exc:  # never leave the drainer blocked
+            holder["result"] = {"ok": False, "error": str(exc)}
+        finally:
+            stream.close()
+
+    worker = threading.Thread(target=_worker, name="chaser-sweep-trace", daemon=True)
+    worker.start()
+    while True:
+        item = stream.drain(timeout=0.5)
+        if TraceStream.is_end(item):
+            break
+        if item is not None:
+            yield item
+    worker.join(timeout=2)
+    result = holder.get("result") or {"ok": False, "error": "sweep produced no result"}
+    yield {
+        "kind": "done",
+        "ok": bool(result.get("ok")),
+        "error": result.get("error"),
+        "report": result.get("report"),
+        "pending": result.get("pending_decisions"),
+        "cycle_id": result.get("cycle_id"),
+    }
 
 
 # ----------------------------------------------------------------------------- decide

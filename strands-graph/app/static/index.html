@@ -14,6 +14,7 @@
     </div>
     <div class="topbar-right">
       <span id="last-run" class="muted">No close run yet</span>
+      <button id="trace-btn" class="btn">Run + live trace</button>
       <button id="run-btn" class="btn btn-primary">Run weekly close</button>
     </div>
   </header>
@@ -22,6 +23,15 @@
 
   <main class="layout">
     <section class="col col-main">
+      <div class="panel hidden" id="trace-panel">
+        <div class="panel-head">
+          <h2>Live graph trace</h2>
+          <span id="trace-status" class="muted small"></span>
+        </div>
+        <p class="muted small">Each row is one event as the graph runs: which node, which tool (file:line), its input, and its result. Deposits/expenses are matched one at a time.</p>
+        <ol id="trace" class="trace-lines"></ol>
+      </div>
+
       <div class="panel" id="approvals-panel">
         <div class="panel-head">
           <h2>Needs your decision <span id="pending-count" class="count">0</span></h2>
@@ -82,5 +92,6 @@
   </main>
 
   <script src="/static/app.js"></script>
+  <script src="/static/trace.js"></script>
 </body>
 </html>
