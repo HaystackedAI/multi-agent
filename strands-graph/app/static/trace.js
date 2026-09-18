@@ -33,13 +33,15 @@
           tag(f.node) +
           " → <code>" + esc(f.tool) + "</code> " +
           '<span class="muted small">' + esc(f.at || "") + "</span>" +
+          '<span class="io-label muted small">input</span>' +
           '<pre class="tio">' + esc(JSON.stringify(f.input)) + "</pre>"
         );
       case "tool_result":
         return (
           tag(f.node) + " ✓ <code>" + esc(f.tool) + "</code> " +
           '<span class="badge ' + (f.status === "gated" ? "gated" : "") + '">' + esc(f.status) + "</span> " +
-          '<span class="muted small">' + esc(f.output || "") + "</span>"
+          '<span class="io-label muted small">output</span>' +
+          '<span class="muted small">' + esc(f.output || "(none)") + "</span>"
         );
       case "edge":
         return (
@@ -57,14 +59,40 @@
     }
   }
 
+  // Plain-language caption for each frame kind, so a reader knows what they're looking at.
+  function hint(f) {
+    switch (f.kind) {
+      case "node_enter":
+        return "this specialist agent just started its turn";
+      case "thinking":
+        return "calling the model to decide the next step";
+      case "said":
+        return "the agent's own narration for this step";
+      case "tool_call":
+        return "about to run this tool — the box is the input arguments it passed, NOT the result (an empty {} just means the tool takes no arguments)";
+      case "tool_result":
+        return f.status === "gated"
+          ? "this action needs your approval, so it was held instead of run — it shows up as a card under “Needs your decision”"
+          : "the tool returned — this line is its output/result";
+      case "edge":
+        return "a routing condition between nodes was evaluated (true = that path is taken this run)";
+      case "done":
+        return f.skipped ? "" : "the run finished — the report is saved and any approvals are waiting for you";
+      default:
+        return "";
+    }
+  }
+
   function render(f) {
     var li = document.createElement("li");
     li.className = "trace-row trace-" + esc(f.kind);
     var dt = t0 ? "+" + ((Date.now() - t0) / 1000).toFixed(1) + "s" : "";
+    var h = hint(f);
     li.innerHTML =
       '<span class="seq">' + esc(f.seq || "") + "</span>" +
       '<span class="dt muted small">' + dt + "</span> " +
-      body(f);
+      body(f) +
+      (h ? '<div class="hint muted small">↳ ' + esc(h) + "</div>" : "");
     list.appendChild(li);
     // Append only; never move the viewport — the reader controls scrolling.
   }
