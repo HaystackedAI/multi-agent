@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 os.environ.setdefault("DEMO_TODAY", "2026-09-12")
 os.environ["AGENT_BACKEND"] = "local"
 os.environ["SWEEP_INTERVAL_SECONDS"] = "0"
+os.environ["CHASER_DB_BACKEND"] = "sqlite"  # keep tests offline even if the agent .env selects postgres
 
 from chaser import service  # noqa: E402
 from chaser.context import set_store  # noqa: E402

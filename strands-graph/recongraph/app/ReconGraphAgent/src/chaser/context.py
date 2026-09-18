@@ -8,6 +8,7 @@ Tests swap the store with :func:`use_store`.
 
 from __future__ import annotations
 
+import os
 import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -19,13 +20,28 @@ _lock = threading.RLock()
 _store: Store | None = None
 _cycle_id: str | None = None
 
+_POSTGRES_BACKENDS = ("postgres", "postgresql", "pg")
+
+
+def _make_default_store() -> Store:
+    """Build the default store: Postgres (Aiven) when opted in, else a local SQLite file.
+
+    Runtime uses Postgres by setting ``CHASER_DB_BACKEND=postgres`` (the agent deployment).
+    Tests leave it unset (or force ``sqlite``) so they stay fully offline.
+    """
+    if os.getenv("CHASER_DB_BACKEND", "sqlite").lower() in _POSTGRES_BACKENDS:
+        from .db import runtime_url
+
+        return Store(runtime_url())
+    return Store(DEFAULT_DB_PATH)
+
 
 def get_store() -> Store:
-    """Return the active store, creating the default SQLite store lazily."""
+    """Return the active store, creating the default store lazily (see ``_make_default_store``)."""
     global _store
     with _lock:
         if _store is None:
-            _store = Store(DEFAULT_DB_PATH)
+            _store = _make_default_store()
         return _store
 
 
